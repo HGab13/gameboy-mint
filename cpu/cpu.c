@@ -1,6 +1,6 @@
-// TODO: Add call to registers.c so we can actually use the registers struct
-// {#include "registers.c"} or {#include "registers.h"}, based on if I need header files. Why haven't I checked that yet.
+// TODO: Figure out if data types can borrow from each other, even if they're from different header files?????
 #include <stdint.h>
+#include "registers.h"
 
 typedef struct CPU {
 

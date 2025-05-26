@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "flags-register.h"
+
 /* Register f's structure:
 
 
@@ -54,10 +56,6 @@ const uint8_t ZERO_FLAG_BYTE_POSITION = 7;
 const uint8_t SUBTRACT_FLAG_BYTE_POSITION = 6;
 const uint8_t HALF_CARRY_FLAG_BYTE_POSITION = 5;
 const uint8_t CARRY_FLAG_BYTE_POSITION = 4;
-
-uint8_t flagtof (flagsregister flag);
-flagsregister ftoflag (uint8_t f);
-uint8_t set_flag (uint8_t old_f, char *flag_name, bool value);
 
 
 // Convert a FlagsRegister type to an 8-bit 'f' register

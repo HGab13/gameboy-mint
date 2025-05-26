@@ -1,10 +1,10 @@
+// Standard libraries
 #include <stdbool.h>
 #include <stdint.h>
-
-
-// TODO: add reference to cpu.c (or, if needed, cpu.h) 
-// TODO: add reference to registers.c (or, if needed, registers.h)
-// TODO: add reference to flags_register.c (or, if needed, flags_register.h)
+// Local libraries
+#include "flags-register.h"
+#include "registers.h"
+// TODO: #include "cpu.h", whenever I get around to making that file
 
 /* Various instructions to the CPU 
     
