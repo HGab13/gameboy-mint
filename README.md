@@ -1,2 +1,2 @@
 # gameboy-mint
-A Gameboy emulator made in C to personally fortify programming principles in own mind.
+A (yet another) Gameboy emulator! It's made in C, so I can learn to use the darn language before College.

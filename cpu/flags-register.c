@@ -42,14 +42,17 @@
       upper nibble            upper nibble  
 */
 
-// TODO: find a way to easily type-convert to and from here to flag f in the same way Rust can
-// The last four bits of flag f (right to left), which carry the flags
-typedef struct FlagsRegister {
+/* On "flags-register.h":
+
+  // The last four bits of flag f (right to left), which carry the flags
+  typedef struct FlagsRegister {
     bool zero;
     bool subtract;
     bool half_carry;
     bool carry;
-} flagsregister;
+  } flagsregister;
+
+*/
 
 // Positions to shift the flags
 const uint8_t ZERO_FLAG_BYTE_POSITION = 7;
