@@ -228,6 +228,62 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
 			break;
         // TODO: ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
         case ADC:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = add_c(self, value_8);
+                    self->cpu_registers.a = new_value_8;
+                    break;
+				// Add (indirect HL): Add the contents of memory specified by register pair HL to the contents of register A, 
+				// and store the results in register A.
+				// TODO: Turns out we need functionality for memory addresses like this.
+				// TODO: Once we get to that phase, implement all of these parts
+				case HL:
+					// TODO: Add code for this???
+					value_8 = 0; // No it's not.
+
+					new_value_8 = add(self, value_8);
+					self->cpu_registers.a = new_value_8;
+					break;
+				// ADD n (add inmediate): Adds to the 8-bit A register, the immediate data n, 
+				// and stores the result back into the A register.
+				case N:
+					value_8 = n;
+
+					new_value_8 = add_c(self, value_8);
+					self->cpu_registers.a = new_value_8;
+					break;
+            }
             break;
 		// TODO: SUB (subtract) - subtract the value stored in a specific register with the value in the A register
         case SUB:

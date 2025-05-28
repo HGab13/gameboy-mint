@@ -91,6 +91,32 @@ flagsregister ftoflag (uint8_t f) {
 
 }
 
+// Get the specific flag you want from the f register as a bool
+bool get_flag(uint8_t old_f, char *flag_name) {
+
+  flagsregister flags_plural;
+
+  flags_plural = ftoflag(old_f);
+
+  bool flag;
+
+  if (strcmp(flag_name, "zero") == 0) {
+    flag = flags_plural.zero;
+  }
+  else if (strcmp(flag_name, "subtract") == 0) {
+    flag = flags_plural.subtract;
+  }
+  else if (strcmp(flag_name, "half_carry") == 0) {
+    flag = flags_plural.half_carry;
+  }
+  else if (strcmp(flag_name, "carry") == 0) {
+    flag = flags_plural.carry;
+  }
+
+  return flag;
+  
+}
+
 // Give the function a flag name and the value you want it to be, and it'll set it inside the given f flag.
 uint8_t set_flag (uint8_t old_f, char *flag_name, bool value) {
   
