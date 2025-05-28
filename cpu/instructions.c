@@ -1,4 +1,5 @@
 // Standard libraries
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -7,6 +8,11 @@
 #include "flags-register.h"
 #include "instructions-helpers.h"
 #include "registers.h"
+
+#define MAXARGS 1
+
+//TODO: make these enums part of an independent header file, so that other files can use it
+// Do so when it's time to implement those other files, so we don't have some weird clutter
 
 /* Various instructions to the CPU 
     
@@ -40,10 +46,10 @@
     TODO: SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
     TODO: SWAP (swap nibbles) - switch upper and lower nibble of a specific register
 */
-
 typedef enum {
     ADD, 
-    ADDH,
+    ADDHL,
+	ADDSP,
     ADC,
     SUB,
     SBC,
@@ -61,7 +67,7 @@ typedef enum {
     RRLA,
     CPL,
     BIT,
-    RESE,
+    RESET,
     SET,
     SRL, 
     RR,
@@ -86,84 +92,140 @@ typedef enum {
 	BC,
 	DE,
 	HL,
-	SP
+	SP,
+	N
 } ArithmeticTarget;
 
-void execute (cpu *self, Instruction instruction, ArithmeticTarget target);
+//
+void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...);
 
 
 // TODO: Execute the instructions given to the CPU based on the given instruction and target
-void execute (cpu *self, Instruction instruction, ArithmeticTarget target) {
+void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) {
+
+	// Declare our inmediate value
+	uint8_t n;
+
+	// Use inmediate value if true, else do not
+	if (target == N) {
+		// Initialize our variadic number, a single 8-bit value that can or can not be passed in
+		va_list args;
+		va_start(args, target);
+
+		// If value exists, place it in a variable. If not, just put it as null and move on.
+		// TODO: Apparently there are some values in here that may be signed???
+		n = va_arg(args, int);
+
+		va_end(args);
+	} else {
+		n = 0;
+	}
+
+	// Define the value set because apparently scope is weird in c switch statements
+	uint8_t value_8;
+	uint8_t new_value_8;
+
+	uint16_t value_16;
+	uint16_t new_value_16;
+
     switch (instruction) {
         // ADD (add) - simple instruction that adds specific register's contents to the A register's contents.
         case ADD: 
             switch (target) {
                 case A:
-                    uint8_t value = self->cpu_registers.a;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case B:
-                    uint8_t value = self->cpu_registers.b;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case C:
-                    uint8_t value = self->cpu_registers.c;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case D:
-                    uint8_t value = self->cpu_registers.d;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case E:
-                    uint8_t value = self->cpu_registers.e;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case H:
-                    uint8_t value = self->cpu_registers.h;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
                 case L:
-                    uint8_t value = self->cpu_registers.l;
-                    uint8_t new_value = add(self, value);
-                    self->cpu_registers.a = new_value;
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = add(self, value_8);
+                    self->cpu_registers.a = new_value_8;
                     break;
+				// Add (indirect HL): Add the contents of memory specified by register pair HL to the contents of register A, 
+				// and store the results in register A.
+				// TODO: Turns out we need functionality for memory addresses like this.
+				// TODO: Once we get to that phase, implement all of these parts
+				case HL:
+					// TODO: Add code for this???
+					value_8 = 0; // No it's not.
+
+					new_value_8 = add(self, value_8);
+					self->cpu_registers.a = new_value_8;
+					break;
+				// ADD n (add inmediate): Adds to the 8-bit A register, the immediate data n, 
+				// and stores the result back into the A register.
+				case N:
+					value_8 = n;
+
+					new_value_8 = add(self, value_8);
+					self->cpu_registers.a = new_value_8;
+					break;
             }
             break;
         // ADDHL (add to HL) - just like ADD except that the target is added to the HL register
         case ADDHL:
 			switch (target) {
 				case BC:
-					uint16_t value = get_bc(self->cpu_registers);
-					uint16_t new_value = add_hl(self, value);
+					value_16 = get_bc(self->cpu_registers);
+					new_value_16 = add_hl(self, value_16);
 
-					set_hl(&self->cpu_registers, new_value); // Reminder: &ptr->value means &(ptr->value)
+					set_hl(&self->cpu_registers, new_value_16); // Reminder: &ptr->value means &(ptr->value)
 					break;
 				case DE:
-					uint16_t value = get_de(self->cpu_registers);
-					uint16_t new_value = add_hl(self, value);
+					value_16 = get_de(self->cpu_registers);
+					new_value_16 = add_hl(self, value_16);
 
-					set_hl(&self->cpu_registers, new_value); 
+					set_hl(&self->cpu_registers, new_value_16); 
 					break;
 				case HL:
-					uint16_t value = get_hl(self->cpu_registers);
-					uint16_t new_value = add_hl(self, value);
+					value_16 = get_hl(self->cpu_registers);
+					new_value_16 = add_hl(self, value_16);
 
-					set_hl(&self->cpu_registers, new_value); 
+					set_hl(&self->cpu_registers, new_value_16); 
 					break;
 				case SP:
-					uint16_t value = cpu->sp;
-					uint16_t new_value = add_hl(self, value);
+					value_16 = self->sp;
+					new_value_16 = add_hl(self, value_16);
 
-					set_hl(&self->cpu_registers, new_value);
+					set_hl(&self->cpu_registers, new_value_16);
 					break;
 			}
             break;
+		case ADDSP:
+			if (target == N) {
+				value_8 = ~n + 1; // Twos complement: complement the number and add 1 to it.
+
+				new_value_16 = add_sp(self, value_8); // Change with a new function for the contents of sp
+				self->sp = new_value_16;
+				break;
+			}
+			break;
         // TODO: ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
         case ADC:
             break;

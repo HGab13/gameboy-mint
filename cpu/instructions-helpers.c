@@ -13,7 +13,7 @@
 uint8_t add (cpu *self, uint8_t value) {
 
     // Add
-	uint8_t new_value = self->registers.a + value;
+	uint8_t new_value = self->cpu_registers.a + value;
     
     
     // Determine flags
@@ -42,7 +42,7 @@ uint16_t add_hl (cpu *self, uint16_t value) {
 
 	 // Determine flags
     bool did_overflow = (new_value < hl);
-    bool did_half_carry = ((hl & 0xF0) + (value & 0xF0)) > 0xF0;
+    bool did_half_carry = ((hl & 0xF000) + (value & 0xF000)) > 0xF000; // Overflow is determined from bit 11 to 12
 
 
     // Set all the registers to their new values
@@ -52,4 +52,27 @@ uint16_t add_hl (cpu *self, uint16_t value) {
     self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", did_half_carry);
 
 	return new_value;
+}
+
+// Same as add_hl but with the sp property in the cpu
+uint16_t add_sp(cpu *self, uint8_t value) {
+
+    // Add 
+	uint16_t sp = self->sp;
+	uint16_t new_value = sp + value; 
+
+	 // Determine flags
+    bool did_overflow = (new_value < hl);
+    bool did_half_carry = ((hl & 0xF000) + (value & 0xF000)) > 0xF000; // Overflow is determined from bit 11 to 12
+
+
+    // Set all the registers to their new values
+    //  - Zero left untouched - 
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", false)
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", did_overflow);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", did_half_carry);
+
+	return new_value;
+
 }

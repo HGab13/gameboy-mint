@@ -98,7 +98,7 @@ uint8_t set_flag (uint8_t old_f, char *flag_name, bool value) {
   flagsregister fr;
 
   // Initialize the new data structure f by reading from flag f's value
-  fr = ftoflag(old_f)
+  fr = ftoflag(old_f);
 
   // By way of the flag_name, set the value of the structure f
   if (strcmp(flag_name, "zero") == 0) {
@@ -115,7 +115,7 @@ uint8_t set_flag (uint8_t old_f, char *flag_name, bool value) {
   }
 
   // Turn the data structure into the f register
-  uint8_t new_f = flagtof(fr)
+  uint8_t new_f = flagtof(fr);
 
   // Return the value of this new f register
   return new_f;

@@ -5,5 +5,6 @@
 
 uint8_t add (cpu *self, uint8_t value);
 uint16_t add_hl (cpu *self, uint16_t value);
+uint16_t add_sp(cpu *self, uint8_t value);
 
 #endif

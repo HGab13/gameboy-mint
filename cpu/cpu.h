@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "registers.h"
+// TODO: when memorybus.h exists, include it
 
 /* -- CPU -- 
     Contains:
