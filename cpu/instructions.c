@@ -92,6 +92,7 @@ typedef enum {
 	BC,
 	DE,
 	HL,
+    iHL,
 	SP,
 	N
 } ArithmeticTarget;
@@ -134,89 +135,68 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             switch (target) {
                 case A:
                     value_8 = self->cpu_registers.a;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case B:
                     value_8 = self->cpu_registers.b;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case C:
                     value_8 = self->cpu_registers.c;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case D:
                     value_8 = self->cpu_registers.d;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case E:
                     value_8 = self->cpu_registers.e;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case H:
                     value_8 = self->cpu_registers.h;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case L:
                     value_8 = self->cpu_registers.l;
-                    new_value_8 = add(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
 				// Add (indirect HL): Add the contents of memory specified by register pair HL to the contents of register A, 
 				// and store the results in register A.
 				// TODO: Turns out we need functionality for memory addresses like this.
 				// TODO: Once we get to that phase, implement all of these parts
-				case HL:
+				case iHL:
 					// TODO: Add code for this???
 					value_8 = 0; // No it's not.
-
-					new_value_8 = add(self, value_8);
-					self->cpu_registers.a = new_value_8;
 					break;
 				// ADD n (add inmediate): Adds to the 8-bit A register, the immediate data n, 
 				// and stores the result back into the A register.
 				case N:
 					value_8 = n;
-
-					new_value_8 = add(self, value_8);
-					self->cpu_registers.a = new_value_8;
 					break;
             }
+
+            new_value_8 = arthins_a(self, value_8, "ADD");
+			self->cpu_registers.a = new_value_8;
+
             break;
         // ADDHL (add to HL) - just like ADD except that the target is added to the HL register
         case ADDHL:
 			switch (target) {
 				case BC:
 					value_16 = get_bc(self->cpu_registers);
-					new_value_16 = add_hl(self, value_16);
-
-					set_hl(&self->cpu_registers, new_value_16); // Reminder: &ptr->value means &(ptr->value)
 					break;
 				case DE:
 					value_16 = get_de(self->cpu_registers);
-					new_value_16 = add_hl(self, value_16);
-
-					set_hl(&self->cpu_registers, new_value_16); 
 					break;
 				case HL:
 					value_16 = get_hl(self->cpu_registers);
-					new_value_16 = add_hl(self, value_16);
-
-					set_hl(&self->cpu_registers, new_value_16); 
 					break;
 				case SP:
 					value_16 = self->sp;
-					new_value_16 = add_hl(self, value_16);
-
-					set_hl(&self->cpu_registers, new_value_16);
 					break;
 			}
+
+            new_value_16 = add_hl(self, value_16);
+            set_hl(&self->cpu_registers, new_value_16); // Reminder: &ptr->value means &(ptr->value)
+
             break;
+        // ADDHL (add to HL) - just like ADD except that the target is added to the SP register and the value is signed
+        // via twos' complement
+        // TODO: check if this actually works to turn this into a twos' complement or not
 		case ADDSP:
 			if (target == N) {
 				value_8 = ~n + 1; // Twos complement: complement the number and add 1 to it.
@@ -226,85 +206,349 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
 				break;
 			}
 			break;
-        // TODO: ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
+        // ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
         case ADC:
             switch (target) {
                 case A:
                     value_8 = self->cpu_registers.a;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case B:
                     value_8 = self->cpu_registers.b;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case C:
                     value_8 = self->cpu_registers.c;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case D:
                     value_8 = self->cpu_registers.d;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case E:
                     value_8 = self->cpu_registers.e;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case H:
                     value_8 = self->cpu_registers.h;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
                 case L:
                     value_8 = self->cpu_registers.l;
-                    new_value_8 = add_c(self, value_8);
-                    self->cpu_registers.a = new_value_8;
                     break;
-				// Add (indirect HL): Add the contents of memory specified by register pair HL to the contents of register A, 
+				// Adc (indirect HL):Add the contents of memory specified by register pair HL and carry to the contents of register A, 
 				// and store the results in register A.
 				// TODO: Turns out we need functionality for memory addresses like this.
 				// TODO: Once we get to that phase, implement all of these parts
-				case HL:
+				case iHL:
 					// TODO: Add code for this???
 					value_8 = 0; // No it's not.
-
-					new_value_8 = add(self, value_8);
-					self->cpu_registers.a = new_value_8;
 					break;
-				// ADD n (add inmediate): Adds to the 8-bit A register, the immediate data n, 
+				// ADC n (adc inmediate): Adds to the 8-bit A register, the immediate data n and the carry flag, 
 				// and stores the result back into the A register.
 				case N:
 					value_8 = n;
-
-					new_value_8 = add_c(self, value_8);
-					self->cpu_registers.a = new_value_8;
 					break;
             }
+
+            new_value_8 = arthins_a(self, value_8, "ADC");
+			self->cpu_registers.a = new_value_8;
+
             break;
-		// TODO: SUB (subtract) - subtract the value stored in a specific register with the value in the A register
+		// SUB (subtract) - subtract the value stored in a specific register with the value in the A register
         case SUB:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    break;
+                // TODO: SUB (HL): at HL's memory address, SUB
+                // TODO: Turns out we need functionality for memory addresses like this.
+                // TODO: Once we get to that phase, implement all of these parts
+                case iHL:
+                    // TODO: Add code for this???
+                    value_8 = 0; // no it's not
+                    break;
+                // SUB n : SUB inmediate value n
+                case N:
+                    value_8 = n;
+                    break;
+            }
+
+            new_value_8 = arthins_a(self, value_8, "SUB");
+            self->cpu_registers.a = new_value_8;
+
             break;
-		//TODO: SBC (subtract with carry)-just like ADD except that the value of the carry flag is alsosubtracted from the number
+		// SBC (subtract with carry)-just like ADD except that the value of the carry flag is alsosubtracted from the number
         case SBC:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    break;
+                    
+                // TODO: SUB (HL): at HL's memory address, SUB
+                // TODO: Turns out we need functionality for memory addresses like this.
+                // TODO: Once we get to that phase, implement all of these parts
+                case iHL:
+                    // TODO: Add code for this???
+                    value_8 = 0; // No it's not.
+                    break;
+                // SUB n : SUB inmediate value n
+                case N:
+                    value_8 = n;
+                    break;
+            }
+
+            new_value_8 = arthins_a(self, value_8, "SBC");
+            self->cpu_registers.a = new_value_8;
+
             break;
-		// TODO: AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register
+		// AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register
         case AND:
+            switch (target) {
+                case A:
+                    self->cpu_registers.a &= self->cpu_registers.a;
+                    break;
+                case B:
+                    self->cpu_registers.a &= self->cpu_registers.b;
+                    break;
+                case C:
+                    self->cpu_registers.a &= self->cpu_registers.c;
+                    break;
+                case D:
+                    self->cpu_registers.a &= self->cpu_registers.d;
+                    break;
+                case E:
+                    self->cpu_registers.a &= self->cpu_registers.e;
+                    break;
+                case H:
+                    self->cpu_registers.a &= self->cpu_registers.h;
+                    break;
+                case L:
+                    self->cpu_registers.a &= self->cpu_registers.l;
+                    break;
+                case iHL:
+                // TODO: figure out HOW TO HANDLE HL POINTERS???????
+                    self->cpu_registers.a &= self->cpu_registers.a;
+                    break;
+                case N:
+                    self->cpu_registers.a &= n;
+                    break;
+            }
+
+            // Evaluate flags
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", (self->cpu_registers.a == 0));
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", true);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", false);
+
             break;
-		// TODO: OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register
+		// OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register
         case OR:
+            switch (target) {
+                case A:
+                    self->cpu_registers.a |= self->cpu_registers.a;
+                    break;
+                case B:
+                    self->cpu_registers.a |= self->cpu_registers.b;
+                    break;
+                case C:
+                    self->cpu_registers.a |= self->cpu_registers.c;
+                    break;
+                case D:
+                    self->cpu_registers.a |= self->cpu_registers.d;
+                    break;
+                case E:
+                    self->cpu_registers.a |= self->cpu_registers.e;
+                    break;
+                case H:
+                    self->cpu_registers.a |= self->cpu_registers.h;
+                    break;
+                case L:
+                    self->cpu_registers.a |= self->cpu_registers.l;
+                    break;
+                case iHL:
+                // TODO: figure out HOW TO HANDLE HL POINTERS???????
+                    self->cpu_registers.a |= self->cpu_registers.a;
+                    break;
+                case N:
+                    self->cpu_registers.a |= n;
+                    break;
+            }
+
+            // Evaluate flags
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", (self->cpu_registers.a == 0));
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", false);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", false);
+
             break;
-		// TODO: XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
+		// XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
         case XOR:
+            switch (target) {
+                case A:
+                    self->cpu_registers.a ^= self->cpu_registers.a;
+                    break;
+                case B:
+                    self->cpu_registers.a ^= self->cpu_registers.b;
+                    break;
+                case C:
+                    self->cpu_registers.a ^= self->cpu_registers.c;
+                    break;
+                case D:
+                    self->cpu_registers.a ^= self->cpu_registers.d;
+                    break;
+                case E:
+                    self->cpu_registers.a ^= self->cpu_registers.e;
+                    break;
+                case H:
+                    self->cpu_registers.a ^= self->cpu_registers.h;
+                    break;
+                case L:
+                    self->cpu_registers.a ^= self->cpu_registers.l;
+                    break;
+                case iHL:
+                // TODO: figure out HOW TO HANDLE HL POINTERS???????
+                    self->cpu_registers.a ^= self->cpu_registers.a;
+                    break;
+                case N:
+                    self->cpu_registers.a ^= n;
+                    break;
+            }
+
+            // Evaluate flags
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", (self->cpu_registers.a == 0));
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", false);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", false);
+
             break; 
 		// TODO: CP (compare) - just like SUB except the result of the subtraction is not stored back into A
         case CP:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    break;
+                // TODO: Figure out how memory addresses work for this????
+                case iHL:
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case N:
+                    value_8 = n;
+                    break;
+            }
+            arthins_a(self, value_8, "SUB");
             break;
-		// TODO: INC (increment) - increment the value in a specific register by 1
+		// INC (increment) - increment the value in a specific register by 1
         case INC:
+            switch(target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+
+                    self->cpu_registers.a = incdec_8(self, value_8, "INC");
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+
+                    self->cpu_registers.b = incdec_8(self, value_8, "INC");
+                    break;
+                case C: 
+                    value_8 = self->cpu_registers.c;
+
+                    self->cpu_registers.c = incdec_8(self, value_8, "INC");
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+
+                    self->cpu_registers.d = incdec_8(self, value_8, "INC");
+                    break;
+                case E: 
+                    value_8 = self->cpu_registers.e;
+
+                    self->cpu_registers.e = incdec_8(self, value_8, "INC");
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+
+                    self->cpu_registers.h = incdec_8(self, value_8, "INC");
+                    break;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+
+                    self->cpu_registers.l = incdec_8(self, value_8, "INC");
+                    break;
+                case iHL: // TODO: figure out HL pointer??
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case BC:
+                    value_16 = get_bc(self->cpu_registers);
+
+                    set_bc(&self->cpu_registers, incdec_16(self, value_16, "INC"));
+                    break;
+                case DE:
+                    value_16 = get_de(self->cpu_registers);
+
+                    set_de(&self->cpu_registers, incdec_16(self, value_16, "INC"));
+                    break;
+                case HL:
+                    value_16 = get_hl(self->cpu_registers);
+
+                    set_hl(&self->cpu_registers, incdec_16(self, value_16, "INC"));
+                    break;
+                case SP:
+                    value_16 = self->sp;
+
+                    self->sp = incdec_16(self, value_16, "INC");
+                    break;
+            }
             break;
 		// TODO: DEC (decrement) - decrement the value in a specific register by 1
         case DEC:
