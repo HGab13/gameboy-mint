@@ -64,7 +64,7 @@ typedef enum {
     RRA,
     RLA,
     RRCA,
-    RRLA,
+    RLCA,
     CPL,
     BIT,
     RESET,
@@ -194,7 +194,7 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             set_hl(&self->cpu_registers, new_value_16); // Reminder: &ptr->value means &(ptr->value)
 
             break;
-        // ADDHL (add to HL) - just like ADD except that the target is added to the SP register and the value is signed
+        // ADDSP (add to HL) - just like ADD except that the target is added to the SP register and the value is signed
         // via twos' complement
         // TODO: check if this actually works to turn this into a twos' complement or not
 		case ADDSP:
@@ -550,29 +550,116 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
                     break;
             }
             break;
-		// TODO: DEC (decrement) - decrement the value in a specific register by 1
+		// DEC (decrement) - decrement the value in a specific register by 1
         case DEC:
+            switch(target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+
+                    self->cpu_registers.a = incdec_8(self, value_8, "DEC");
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+
+                    self->cpu_registers.b = incdec_8(self, value_8, "DEC");
+                    break;
+                case C: 
+                    value_8 = self->cpu_registers.c;
+
+                    self->cpu_registers.c = incdec_8(self, value_8, "DEC");
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+
+                    self->cpu_registers.d = incdec_8(self, value_8, "DEC");
+                    break;
+                case E: 
+                    value_8 = self->cpu_registers.e;
+
+                    self->cpu_registers.e = incdec_8(self, value_8, "DEC");
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+
+                    self->cpu_registers.h = incdec_8(self, value_8, "DEC");
+                    break;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+
+                    self->cpu_registers.l = incdec_8(self, value_8, "DEC");
+                    break;
+                case iHL: // TODO: figure out HL pointer??
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case BC:
+                    value_16 = get_bc(self->cpu_registers);
+
+                    set_bc(&self->cpu_registers, incdec_16(self, value_16, "DEC"));
+                    break;
+                case DE:
+                    value_16 = get_de(self->cpu_registers);
+
+                    set_de(&self->cpu_registers, incdec_16(self, value_16, "DEC"));
+                    break;
+                case HL:
+                    value_16 = get_hl(self->cpu_registers);
+
+                    set_hl(&self->cpu_registers, incdec_16(self, value_16, "DEC"));
+                    break;
+                case SP:
+                    value_16 = self->sp;
+
+                    self->sp = incdec_16(self, value_16, "DEC");
+                    break;
+            }
             break;
-		// TODO: CCF (complement carry flag) - toggle the value of the carry flag
+		// CCF (complement carry flag) - toggle the value of the carry flag
+        // NOTE: CCF and SCF also set subtract and half-carry's flags to false
         case CCF:
+            value_8 = self->cpu_registers.f;
+            
+            new_value_8 = set_flag(value_8, "carry", ~get_flag(value_8, "carry"));
+
+            self->cpu_registers.f = new_value_8;
+
+            self->cpu_registers.f = set_flag(value_8, "subtract", false);
+            self->cpu_registers.f = set_flag(value_8, "half-carry", false);
             break;
-		// TODO: SCF (set carry flag) - set the carry flag to true
+		// SCF (set carry flag) - set the carry flag to true
         case SCF:
+            value_8 = self->cpu_registers.f;
+
+            new_value_8 = set_flag(value_8, "carry", true);
+
+            self->cpu_registers.f = new_value_8;
+
+            self->cpu_registers.f = set_flag(value_8, "subtract", false);
+            self->cpu_registers.f = set_flag(value_8, "half-carry", false);
             break;
-		// TODO: RRA (rotate right A register) - bit rotate A register right through the carry flag
+		// RRA (rotate right A register) - bit rotate A register right through the carry flag
+        // NOTE: "Through the carry flag" means that the contents in the carry flag are copied to the bit left behind
         case RRA:
+            rotate_a(self, "RRA");
             break;
-		// TODO: RLA (rotate left A register) - bit rotate A register left through the carry flag
+		// RLA (rotate left A register) - bit rotate A register left through the carry flag
         case RLA:
+            rotate_a(self, "RLA");
             break;
-		// TODO: RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
+		// RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
         case RRCA:
+            rotate_a(self, "RRCA");
             break;
-		// TODO: RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)
-        case RRLA:
+		// RLCA (rotate left A register) - bit rotate A register left (not through the carry flag)
+        case RLCA:
+            rotate_a(self, "RLCA");
             break;
-		// TODO: CPL (complement) - toggle every bit of the A register
+		// CPL (complement) - toggle every bit of the A register
         case CPL:
+            self->cpu_registers.a = ~self->cpu_registers.a;
+
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", true);
+            self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", true);
             break;
 		// TODO: BIT (bit test) - test to see if a specific bit of a specific register is set
         case BIT:
@@ -585,6 +672,48 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             break;
 		// TODO: SRL (shift right logical) - bit shift a specific register right by 1
         case SRL: 
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SRL");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
 		// TODO: RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
         case RR:
