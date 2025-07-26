@@ -104,6 +104,57 @@ uint16_t add_sp(cpu *self, uint8_t value) {
 
 }
 
+
+// Bit Setting: function that combines RES and SET
+// TODO: if the data type of n changes, also reflect that in bit_number
+uint8_t bit_setting (uint8_t value, uint8_t bit_number, char *instruction) {
+
+    uint8_t new_value;
+
+    // Reset and Set
+    if (strcmp (instruction, "RES") == 0) {
+
+        // Reset the value in space bit_number to 0
+        uint8_t bitmask = ~(1 << bit_number);
+        new_value = value & bitmask;
+
+    } else if (strcmp (instruction, "SET") == 0) {
+
+        // Set the value in space bit_number to 1
+        uint8_t bit = 1 << bit_number;
+        new_value = value + bit;
+
+    } else {
+        return 1;
+    }
+
+    // - No flags affected - 
+
+    return new_value;
+
+}
+
+// Bit test: just for BIT since it needs to copy stuff to the Z flag of the F register
+// TODO: if the data type of n changes, also reflect that in bit_number
+void bit_test (cpu *self, uint8_t value_to_test, uint8_t bit_number) {
+
+    uint8_t bit_mask = 1 << bit_number;
+
+    // What's done here is a test of if the one bit we're testing is zero or not by copying its complement (bc 0 is false and 1 is true)
+    uint8_t test_bit = ((value_to_test & bit_mask) >> bit_number);
+    bool is_bit_zero = !test_bit;
+    // Set zeri flag to new value. Congratulations! You have found if the bit is zero
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", is_bit_zero);
+
+    // Change values of remaining flags
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", true);
+    // - Carry flag left untouched -
+
+
+}
+
+
 // Increment/Decrease: a combined function for INC and DEC, one for an 8-bit register and another for a 16-bit one
 uint8_t incdec_8 (cpu *self, uint8_t value, char *instruction) {
 
@@ -118,6 +169,10 @@ uint8_t incdec_8 (cpu *self, uint8_t value, char *instruction) {
     } else if (strcmp(instruction, "DEC") == 0) {
 
         new_value = value - 1;
+
+    } else {
+
+        return 1;
 
     }
 
@@ -146,6 +201,10 @@ uint16_t incdec_16 (cpu *self, uint16_t value, char *instruction) {
     } else if (strcmp(instruction, "DEC") == 0) {
 
         new_value = value - 1;
+
+    } else {
+
+        return 1;
 
     }
 
@@ -181,16 +240,16 @@ uint8_t rotate_a(cpu *self, char *instruction) {
 
     } else if (strcmp(instruction, "RRCA") == 0) {
 
-        a_bit = a_value & 0xFE; // Retrieve just bit 0
+        a_bit = a_value & 0x1; // Retrieve just bit 0
         new_value = (a_value >> 1) | (a_bit << 7);
     
     } else if (strcmp(instruction, "RLCA") == 0) {
 
-        a_bit = (a_value & 0x7F) >> 7; // Retrieve just bit 7
+        a_bit = (a_value & 0x80) >> 7; // Retrieve just bit 7
         new_value = (a_value << 1) | a_bit;
         
     } else {
-        return 0;
+        return 1;
     }
 
     // Set all flags to their new values
@@ -234,7 +293,7 @@ uint8_t shift_rot(cpu *self, uint8_t value, char *instruction) {
 
     } else if (strcmp(instruction, "SRA") == 0) {
         
-        bit = (value & 0x7F) >> 7; // Retrieve bit 7
+        bit = (value & 0x80) >> 7; // Retrieve bit 7
         new_value = (value >> 1) | (bit << 7);
 
     } else if (strcmp(instruction, "SLA") == 0) {
@@ -251,16 +310,16 @@ uint8_t shift_rot(cpu *self, uint8_t value, char *instruction) {
 
     } else if (strcmp(instruction, "RRC") == 0) {
 
-        bit = value & 0xFE; // Retrieve just bit 0
+        bit = value & 0x1; // Retrieve just bit 0
         new_value = (value >> 1) | (bit << 7);
         
     } else if (strcmp(instruction, "RLC") == 0) {
        
-        bit = (value & 0x7F) >> 7; // Retrieve just bit 7
+        bit = (value & 0x80) >> 7; // Retrieve just bit 7
         new_value = (value << 1) | bit;
 
     } else {
-        return 0;
+        return 1;
     }
 
 
@@ -285,4 +344,26 @@ uint8_t shift_rot(cpu *self, uint8_t value, char *instruction) {
 
 
     return new_value;
+}
+
+// Self-explanatory, swap upper and lower nibbles
+void swap_nibbles (cpu *self, uint8_t *value) {
+
+    // Bitmask so that only the upper nibble passes, and place it in the lower nibble
+    uint8_t upper_nibble = (*value & 0xF0) >> 4;
+
+    // Bitshifting by four leaves the lower 4 nibbles into the higher 4
+    *value <<= 4;
+
+    // Concatenate it with the upper nibble and set it as the new value
+    *value |= upper_nibble;
+
+    // Set all flags to new values 
+    bool is_new_value_zero = (*value == 0);
+
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "zero", is_new_value_zero);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", false);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", false);
+    self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", false);
+
 }

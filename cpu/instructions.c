@@ -17,34 +17,34 @@
 /* Various instructions to the CPU 
     
     ADD (add) - simple instruction that adds specific register's contents to the A register's contents.
-    TODO: ADDHL (add to HL) - just like ADD except that the target is added to the HL register
-    TODO: ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
-    TODO: SUB (subtract) - subtract the value stored in a specific register with the value in the A register
-    TODO: SBC (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number
-    TODO: AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register
-    TODO: OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register
-    TODO: XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
-    TODO: CP (compare) - just like SUB except the result of the subtraction is not stored back into A
-    TODO: INC (increment) - increment the value in a specific register by 1
-    TODO: DEC (decrement) - decrement the value in a specific register by 1
-    TODO: CCF (complement carry flag) - toggle the value of the carry flag
-    TODO: SCF (set carry flag) - set the carry flag to true
-    TODO: RRA (rotate right A register) - bit rotate A register right through the carry flag
-    TODO: RLA (rotate left A register) - bit rotate A register left through the carry flag
-    TODO: RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
-    TODO: RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)
-    TODO: CPL (complement) - toggle every bit of the A register
-    TODO: BIT (bit test) - test to see if a specific bit of a specific register is set
-    TODO: RESET (bit reset) - set a specific bit of a specific register to 0
-    TODO: SET (bit set) - set a specific bit of a specific register to 1
-    TODO: SRL (shift right logical) - bit shift a specific register right by 1
-    TODO: RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
-    TODO: RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
-    TODO: RRC (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
-    TODO: RLC (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
-    TODO: SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
-    TODO: SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
-    TODO: SWAP (swap nibbles) - switch upper and lower nibble of a specific register
+    ADDHL (add to HL) - just like ADD except that the target is added to the HL register
+    ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
+    SUB (subtract) - subtract the value stored in a specific register with the value in the A register
+    SBC (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number
+    AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register
+    OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register
+    XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
+    CP (compare) - just like SUB except the result of the subtraction is not stored back into A
+    INC (increment) - increment the value in a specific register by 1
+    DEC (decrement) - decrement the value in a specific register by 1
+    CCF (complement carry flag) - toggle the value of the carry flag
+    SCF (set carry flag) - set the carry flag to true
+    RRA (rotate right A register) - bit rotate A register right through the carry flag
+    RLA (rotate left A register) - bit rotate A register left through the carry flag
+    RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
+    RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)
+    CPL (complement) - toggle every bit of the A register
+    BIT (bit test) - test to see if a specific bit of a specific register is set
+    RESET (bit reset) - set a specific bit of a specific register to 0
+    SET (bit set) - set a specific bit of a specific register to 1
+    SRL (shift right logical) - bit shift a specific register right by 1
+    RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
+    RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
+    RRC (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
+    RLC (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
+    SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
+    SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
+    SWAP (swap nibbles) - switch upper and lower nibble of a specific register
 */
 typedef enum {
     ADD, 
@@ -67,7 +67,7 @@ typedef enum {
     RLCA,
     CPL,
     BIT,
-    RESET,
+    RES,
     SET,
     SRL, 
     RR,
@@ -108,13 +108,13 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
 	uint8_t n;
 
 	// Use inmediate value if true, else do not
-	if (target == N) {
+	if (target == N || instruction == BIT || instruction == RES || instruction == SET) {
 		// Initialize our variadic number, a single 8-bit value that can or can not be passed in
 		va_list args;
 		va_start(args, target);
 
 		// If value exists, place it in a variable. If not, just put it as null and move on.
-		// TODO: Apparently there are some values in here that may be signed???
+		// TODO: Apparently there are some instructions that may need this inmediate value to be signed, so I'll need to account for those later on
 		n = va_arg(args, int);
 
 		va_end(args);
@@ -452,7 +452,7 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             self->cpu_registers.f = set_flag(self->cpu_registers.f, "carry", false);
 
             break; 
-		// TODO: CP (compare) - just like SUB except the result of the subtraction is not stored back into A
+		// CP (compare) - just like SUB except the result of the subtraction is not stored back into A
         case CP:
             switch (target) {
                 case A:
@@ -614,6 +614,8 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
                     break;
             }
             break;
+
+
 		// CCF (complement carry flag) - toggle the value of the carry flag
         // NOTE: CCF and SCF also set subtract and half-carry's flags to false
         case CCF:
@@ -637,6 +639,8 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             self->cpu_registers.f = set_flag(value_8, "subtract", false);
             self->cpu_registers.f = set_flag(value_8, "half-carry", false);
             break;
+
+
 		// RRA (rotate right A register) - bit rotate A register right through the carry flag
         // NOTE: "Through the carry flag" means that the contents in the carry flag are copied to the bit left behind
         case RRA:
@@ -654,6 +658,8 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
         case RLCA:
             rotate_a(self, "RLCA");
             break;
+
+
 		// CPL (complement) - toggle every bit of the A register
         case CPL:
             self->cpu_registers.a = ~self->cpu_registers.a;
@@ -661,16 +667,164 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
             self->cpu_registers.f = set_flag(self->cpu_registers.f, "subtract", true);
             self->cpu_registers.f = set_flag(self->cpu_registers.f, "half_carry", true);
             break;
-		// TODO: BIT (bit test) - test to see if a specific bit of a specific register is set
+
+
+		// BIT (bit test) - test to see if a specific bit of a specific register is set
         case BIT:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    break;
+                // TODO: YOu know, this repo is currently public and I'm just screaming into these to-dos.
+                // I hope this shows in the future how I get better at programming these things.
+                case iHL:
+                    value_8 = 0;
+                    break;
+            }
+            
+            if (n >= 0 && n <= 7) {
+                bit_test(self, value_8, n);
+            } else {
+                return 2;
+            }
+
             break;
-		// TODO: RESET (bit reset) - set a specific bit of a specific register to 0
-        case RESET:
+
+
+		// RES (bit reset) - set a specific bit of a specific register to 0
+        case RES:
+            if (n >= 0 && n <= 7) { 
+                switch (target) {
+                    case A:
+                        value_8 = self->cpu_registers.a;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+                        
+                        self->cpu_registers.a = new_value_8;
+                        break;
+                    case B:
+                        value_8 = self->cpu_registers.b;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.b = new_value_8;
+                        break;
+                    case C:
+                        value_8 = self->cpu_registers.c;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.c = new_value_8;
+                        break;
+                    case D:
+                        value_8 = self->cpu_registers.d;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.d = new_value_8;
+                        break;
+                    case E:
+                        value_8 = self->cpu_registers.e;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.e = new_value_8;
+                        break;
+                    case H:
+                        value_8 = self->cpu_registers.h;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.h = new_value_8;
+                        break;
+                    case L:
+                        value_8 = self->cpu_registers.l;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+
+                        self->cpu_registers.l = new_value_8;
+                        break;
+                    // TODO: YOu know, this repo is currently public and I'm just screaming into these to-dos.
+                    // I hope this shows in the future how I get better at programming these things.
+                    case iHL:
+                        value_8 = 0;
+                        new_value_8 = bit_setting(value_8, n, "RES");
+                        break;
+                }
+            } else {
+                return 2;
+            }
             break;
-		// TODO: SET (bit set) - set a specific bit of a specific register to 1
+		// SET (bit set) - set a specific bit of a specific register to 1
         case SET:
+            if (n >= 0 && n <= 7) {
+                switch (target) {
+                    case A:
+                        value_8 = self->cpu_registers.a;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+                        
+                        self->cpu_registers.a = new_value_8;
+                        break;
+                    case B:
+                        value_8 = self->cpu_registers.b;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.b = new_value_8;
+                        break;
+                    case C:
+                        value_8 = self->cpu_registers.c;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.c = new_value_8;
+                        break;
+                    case D:
+                        value_8 = self->cpu_registers.d;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.d = new_value_8;
+                        break;
+                    case E:
+                        value_8 = self->cpu_registers.e;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.e = new_value_8;
+                        break;
+                    case H:
+                        value_8 = self->cpu_registers.h;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.h = new_value_8;
+                        break;
+                    case L:
+                        value_8 = self->cpu_registers.l;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+
+                        self->cpu_registers.l = new_value_8;
+                        break;
+                    // TODO: YOu know, this repo is currently public and I'm just screaming into these to-dos.
+                    // I hope this shows in the future how I get better at programming these things.
+                    case iHL:
+                        value_8 = 0;
+                        new_value_8 = bit_setting(value_8, n, "SET");
+                        break;
+                }
+            } else {
+                return 2;
+            }
             break;
-		// TODO: SRL (shift right logical) - bit shift a specific register right by 1
+
+		// SRL (shift right logical) - bit shift a specific register right by 1
         case SRL: 
             switch (target) {
                 case A:
@@ -715,26 +869,304 @@ void execute (cpu *self, Instruction instruction, ArithmeticTarget target, ...) 
                     break;
             }
             break;
-		// TODO: RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
+		// RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
         case RR:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RR");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
+		// RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
         case RL:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RL");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: RRC (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
+		// RRC (rotate right) - bit rotate a specific register right by 1 (not through the carry flag)
         case RRC:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RRC");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: RLC (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
+		// RLC (rotate left) - bit rotate a specific register left by 1 (not through the carry flag)
         case RLC:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "RLC");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
+		// SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
         case SRA:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SRA");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
+		// SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
         case SLA:
+            switch (target) {
+                case A:
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.a = new_value;
+                    break;
+                case B:
+                    value_8 = self->cpu_registers.b;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.b = new_value;
+                    break;
+                case C:
+                    value_8 = self->cpu_registers.c;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.c = new_value;
+                    break;
+                case D:
+                    value_8 = self->cpu_registers.d;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.d = new_value;
+                    break;
+                case E:
+                    value_8 = self->cpu_registers.e;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.e = new_value;
+                    break;
+                case H:
+                    value_8 = self->cpu_registers.h;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.h = new_value;
+                    break;
+                case L:
+                    value_8 = self->cpu_registers.l;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.l = new_value;
+                    break;
+                case iHL: // TODO: Wwwwhyyyyyyyy I need to find out how to work these 16-bit pointers soonnnnn
+                    value_8 = self->cpu_registers.a;
+                    new_value_8 = shift_rot(self, value_8, "SLA");
+                    self->cpu_registers.a = new_value;
+                    break;
+            }
             break;
-		// TODO: SWAP (swap nibbles) - switch upper and lower nibble of a specific register
+		// SWAP (swap nibbles) - switch upper and lower nibble of a specific register
         case SWAP:
+            switch (target) {
+                case A:
+                    swap(self, &self->cpu_registers.a);
+                    break;
+                case B:
+                    swap(self, &self->cpu_registers.b);
+                    break;
+                case C:
+                    swap(self, &self->cpu_registers.c);
+                    break;
+                case D:
+                    swap(self, &self->cpu_registers.d);
+                    break;
+                case E:
+                    swap(self, &self->cpu_registers.e);
+                    break;
+                case H:
+                    swap(self, &self->cpu_registers.h);
+                    break;
+                case L:
+                    swap(self, &self->cpu_registers.l);
+                    break;
+                case iHL: // TODO: WHYYYY
+                    swap(self, &self->cpu_registers.a);
+                    break;
+            }
             break;
     }
 }

@@ -4,6 +4,8 @@
 
 #include "flags-register.h"
 
+// If I knew this was also called the Program Status Word at the beginning, I would've called this file psw.c since that sounds way cooler
+
 /* Register f's structure:
 
 
