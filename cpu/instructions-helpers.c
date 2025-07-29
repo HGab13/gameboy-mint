@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 // Local libraries
-#include "cpu.h"
+#include "cpu-struct.h"
 #include "flags-register.h"
 #include "registers.h"
 

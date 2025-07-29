@@ -1,5 +1,27 @@
+#include <stdint.h>
 #include "cpu.h"
+#include "memorybus.h"
 
-// TODO: Add rest of file when it's time to get cpu.
 
-// Realization: it may be possible that this file gets zero continuation, since all we need from "cpu" rn is that one struct.
+
+void step (cpu *self) {
+
+    // The byte that'll be used for our instruction set
+    uint8_t instruction_byte = read_byte(self->bus, self->pc);
+
+    // Declare the next step in the program counter
+    uint16_t next_pc;
+    if (true) {
+
+        execute()
+
+    } else {
+        // Unkown instruction found for: 0x%X
+        printf("Uh oh! Dingus got into an invalid memory address!!!! \n No instructions were found at your 0x%X", instruction_byte); 
+        // TODO: find a way to panic/abort without causting memory leakage
+        abort();
+    }
+
+    self->pc = next_pc;
+
+}
