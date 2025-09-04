@@ -11,9 +11,9 @@ void step (cpu *self) {
 
     // Declare the next step in the program counter
     uint16_t next_pc;
-    if (true) {
+    if (1 == 1) {
 
-        execute()
+        execute();
 
     } else {
         // Unkown instruction found for: 0x%X

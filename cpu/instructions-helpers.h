@@ -18,6 +18,6 @@ uint16_t incdec_16 (cpu *self, uint16_t value, char *instruction);
 uint8_t rotate_a(cpu *self, char *instruction);
 // Combines SRL, SRA, SLA, RR, RL, RRC, and RLC
 uint8_t shift_rot(cpu *self, uint8_t value, char *instruction);
-void swap_nibbles (cpu *self, uint8_t *value)
+void swap_nibbles (cpu *self, uint8_t *value);
 
 #endif
